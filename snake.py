@@ -2,13 +2,14 @@ import pygame, random
 
 
 class Cube:
-    rows = 20
-    def __init__(self, start, cube_size, dirnx=1, dirny=0, color=(255, 0, 0)):
+    # rows = 20 # TODO denna behövs nog inte heller
+    def __init__(self, start, cube_size, rows, dirnx=1, dirny=0, color=(255, 0, 0)): # TODO dirnx/y här behövs nog inte
         self.position = start
         self.dirnx = 1  # Initial X movement
         self.dirny = 0  # Initial Y movement
         self.cube_size = cube_size
         self.color = color
+        self.rows = rows
 
     def move(self, dirnx, dirny):
         self.dirnx = dirnx
@@ -31,17 +32,19 @@ class Cube:
 
 
 class Snake:
-    body = []
+    body = [] # TODO dessa borde vara intsansvariabler
     turns = {}
 
-    def __init__(self, color, position, size):
+    def __init__(self, color, position, size, rows):
         self.color = color
-        self.head = Cube(position, size)
-        self.body.append(self.head)
+        self.rows = rows
         self.snake_size = size
+        self.head = Cube(position, self.snake_size, self.rows)
+        self.body.append(self.head)
+
 
         self.dirnx = 0  # Initial X movement
-        self.dirny = 1  # Initial Y movement
+        self.dirny = 1  # Initial Y movement # TODO Dessa behövs nog inte
 
     def move(self):
         for event in pygame.event.get():
@@ -51,11 +54,11 @@ class Snake:
 
             keys = pygame.key.get_pressed()
 
-            #for key in keys:
+            #for key in keys: # TODO denna ser inte heller ut att behövas
             if keys[pygame.K_LEFT]:
                 self.dirnx = -1
                 self.dirny = 0
-                self.turns[self.head.position[:]] = [self.dirnx, self.dirny]
+                self.turns[self.head.position[:]] = [self.dirnx, self.dirny] # TODO Tror inte att man måste göra kopior på kordinaterna här då de bara är en nyckel
             elif keys[pygame.K_RIGHT]:
                 self.dirnx = 1
                 self.dirny = 0
@@ -63,7 +66,7 @@ class Snake:
             elif keys[pygame.K_UP]:
                 self.dirnx = 0
                 self.dirny = - 1
-                self.turns[self.head.position[:]] = [self.dirnx, self.dirny]
+                self.turns[self.head.position[:]] = [self.dirnx, self.dirny] # TODO dettta borde kunna generaliseras
             elif keys[pygame.K_DOWN]:
                 self.dirnx = 0
                 self.dirny = 1
@@ -88,6 +91,22 @@ class Snake:
                 else:
                     c.move(c.dirnx, c.dirny)
 
+    def addcube(self):
+        tail = self.body[-1]
+        dirnx, dirny = tail.dirnx, tail.dirny
+
+        if dirnx == 1 and dirny == 0:
+            self.body.append(Cube((tail.position[0]-1, tail.position[1]), self.snake_size, self.rows))
+        elif dirnx == -1 and dirny == 0:
+            self.body.append(Cube((tail.position[0]+1, tail.position[1]), self.snake_size, self.rows))
+        elif dirnx == 0 and dirny == 1:
+            self.body.append(Cube((tail.position[0], tail.position[1]-1), self.snake_size, self.rows))
+        elif dirnx == 0 and dirny == -1:
+            self.body.append(Cube((tail.position[0], tail.position[1]+1), self.snake_size, self.rows))
+
+        self.body[-1].dirnx, self.body[-1].dirny = dirnx, dirny
+
+
     def draw_snake(self, win):
         for i, c in enumerate(self.body):
             if i == 0:
@@ -97,7 +116,6 @@ class Snake:
 
 
 def draw_grid(win, step_size, width):
-    # step_size = width // rows
 
     x, y = 0, 0
     for row in range(width//step_size):
@@ -108,9 +126,23 @@ def draw_grid(win, step_size, width):
         pygame.draw.line(win, (255, 255, 255), (0, y), (width, y))  # Horizontal line
 
 
-def refresh_board(win, width, snake, step_size):
+def randomCube(rows, item):
+    positions = item.body
+
+    while True:
+        x = random.randrange(rows)
+        y = random.randrange(rows)
+        if len(list(filter(lambda z: z.position == (x, y), positions))) > 0: # TODO Denna ska ändras, kollar så att ett snack inte spawnar på ormen.
+            continue
+        else:
+            break  # TODO förbättra denna
+    return x, y
+
+
+def refresh_board(win, width, snake, step_size, snack):
     win.fill((0, 0, 0))
     snake.draw_snake(win)
+    snack.draw(win)
     draw_grid(win, step_size, width)
     pygame.display.update()
 
@@ -122,7 +154,8 @@ def game_loop():
 
     pygame.init()
     win = pygame.display.set_mode(size=(height, width))
-    snake = Snake((255, 0, 0), (10, 10), step_size)  # Create the snakehead on its starting position
+    snake = Snake((255, 0, 0), (10, 10), step_size, rows)  # Create the snakehead on its starting position
+    snack = Cube(randomCube(rows, snake), step_size, rows, color=(0, 255, 0))
     x = True
 
     clock = pygame.time.Clock()
@@ -131,13 +164,15 @@ def game_loop():
         pygame.time.delay(50)
         clock.tick(10)
         snake.move()
-        refresh_board(win, height, snake, step_size)
+        if snake.body[0].position == snack.position:
+            snake.addcube()
+            snack = Cube(randomCube(rows, snake), step_size, rows, color=(0, 255, 0))
+        refresh_board(win, height, snake, step_size, snack)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 # pygame.quit()
                 exit()
-
-
 
 
 if __name__ == "__main__":
