@@ -2,6 +2,7 @@ import pygame, random
 
 
 class Cube:
+    rows = 20
     def __init__(self, start, cube_size, dirnx=1, dirny=0, color=(255, 0, 0)):
         self.position = start
         self.dirnx = 1  # Initial X movement
@@ -12,7 +13,7 @@ class Cube:
     def move(self, dirnx, dirny):
         self.dirnx = dirnx
         self.dirny = dirny
-        self.position(self.position[0] + self.dirnx, self.position[1] + self.dirny)
+        self.position = (self.position[0] + self.dirnx, self.position[1] + self.dirny)
 
     def draw(self, win, eyes=False):
         cs = self.cube_size
@@ -69,21 +70,21 @@ class Snake:
                 self.turns[self.head.position[:]] = [self.dirnx, self.dirny]
 
         for i, c in enumerate(self.body):
-            p = c.pos[:]
+            p = c.position[:]
             if p in self.turns:
                 turn = self.turns[p]
                 c.move(turn[0], turn[1])
                 if i == len(self.body) - 1:
                     self.turns.pop(p)
             else:
-                if c.dirnx == -1 and c.pos[0] <= 0:
-                    c.pos = (c.rows - 1, c.pos[1])
-                elif c.dirnx == 1 and c.pos[0] >= c.rows - 1:
-                    c.pos = (0, c.pos[1])
-                elif c.dirny == 1 and c.pos[1] >= c.rows - 1:
-                    c.pos = (c.pos[0], 0)
-                elif c.dirny == -1 and c.pos[1] <= 0:
-                    c.pos = (c.pos[0], c.rows - 1)
+                if c.dirnx == -1 and c.position[0] <= 0:
+                    c.position = (c.rows - 1, c.position[1])
+                elif c.dirnx == 1 and c.position[0] >= c.rows - 1:
+                    c.position = (0, c.position[1])
+                elif c.dirny == 1 and c.position[1] >= c.rows - 1:
+                    c.position = (c.position[0], 0)
+                elif c.dirny == -1 and c.position[1] <= 0:
+                    c.position = (c.position[0], c.rows - 1)
                 else:
                     c.move(c.dirnx, c.dirny)
 
@@ -123,19 +124,28 @@ def game_loop():
     win = pygame.display.set_mode(size=(height, width))
     snake = Snake((255, 0, 0), (10, 10), step_size)  # Create the snakehead on its starting position
     x = True
+
+    clock = pygame.time.Clock()
     while x:
+
+        pygame.time.delay(50)
+        clock.tick(10)
+        snake.move()
         refresh_board(win, height, snake, step_size)
-        key = pygame.key.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 # pygame.quit()
                 exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d]:
-                    print(event.key)
-        if key[pygame.K_a]:
-            x = False
+
+
 
 
 if __name__ == "__main__":
     game_loop()
+
+    #elif event.type == pygame.KEYDOWN:
+    #if event.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d]:
+    #    print(event.key)
+    #key = pygame.key.get_pressed()
+    #if key[pygame.K_a]:
+    #   x = False
