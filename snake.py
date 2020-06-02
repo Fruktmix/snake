@@ -1,4 +1,7 @@
-import pygame, random
+import pygame
+import random
+import tkinter as tk
+from tkinter import messagebox
 
 
 class Cube:
@@ -106,13 +109,20 @@ class Snake:
 
         self.body[-1].dirnx, self.body[-1].dirny = dirnx, dirny
 
-
     def draw_snake(self, win):
         for i, c in enumerate(self.body):
             if i == 0:
                 c.draw(win, True)
             else:
                 c.draw(win)
+
+    def reset_snake(self, position):
+        self.head = Cube(position, self.snake_size, self.rows) # TODO detta borde kunna lösas med att man bara förstör objectet
+        self.body = []
+        self.body.append(self.head)
+        self.turns = {}
+        self.dirnx = 0
+        self.dirny = 1
 
 
 def draw_grid(win, step_size, width):
@@ -147,6 +157,13 @@ def refresh_board(win, width, snake, step_size, snack):
     pygame.display.update()
 
 
+def message_box(sub, content):
+    root = tk.Tk()
+    root.attributes("-topmost", True)
+    root.withdraw()
+    messagebox.showinfo(sub, content)
+
+
 def game_loop():
     height, width = 500, 500
     rows = 20
@@ -167,6 +184,14 @@ def game_loop():
         if snake.body[0].position == snack.position:
             snake.addcube()
             snack = Cube(randomCube(rows, snake), step_size, rows, color=(0, 255, 0))
+
+        for i in range(len(snake.body)):
+            if snake.body[i].position in list(map(lambda s: s.position, snake.body[i+1:])):
+                print("Score: ", len(snake.body))
+                message_box("You lost", "Play again")
+                snake.reset_snake((10, 10))
+                break
+
         refresh_board(win, height, snake, step_size, snack)
 
         for event in pygame.event.get():
