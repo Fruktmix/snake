@@ -7,6 +7,7 @@ class Cube:
         self.dirnx = 1  # Initial X movement
         self.dirny = 0  # Initial Y movement
         self.cube_size = cube_size
+        self.color = color
 
     def move(self, dirnx, dirny):
         self.dirnx = dirnx
@@ -14,8 +15,18 @@ class Cube:
         self.position(self.position[0] + self.dirnx, self.position[1] + self.dirny)
 
     def draw(self, win, eyes=False):
+        cs = self.cube_size
+        column = self.position[0]
+        row = self.position[1]
 
-        pass
+        pygame.draw.rect(win, self.color, (column*cs+1, row*cs+1, cs-2, cs-2))
+        if eyes:
+            center = cs // 2
+            radius = 3
+            circleMiddle = (column*cs+center-radius, row*cs+8)
+            circleMiddle2 = (column*cs+cs-radius*2, row*cs+8)
+            pygame.draw.circle(win, (0, 0, 0), circleMiddle, radius)
+            pygame.draw.circle(win, (0, 0, 0), circleMiddle2, radius)
 
 
 class Snake:
