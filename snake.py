@@ -5,8 +5,7 @@ from tkinter import messagebox
 
 
 class Cube:
-    # rows = 20 # TODO denna behövs nog inte heller
-    def __init__(self, start, cube_size, rows, dirnx=1, dirny=0, color=(255, 0, 0)): # TODO dirnx/y här behövs nog inte
+    def __init__(self, start, cube_size, rows, color=(255, 0, 0)):
         self.position = start
         self.dirnx = 1  # Initial X movement
         self.dirny = 0  # Initial Y movement
@@ -28,55 +27,45 @@ class Cube:
         if eyes:
             center = cs // 2
             radius = 3
-            circleMiddle = (column*cs+center-radius, row*cs+8)
-            circleMiddle2 = (column*cs+cs-radius*2, row*cs+8)
-            pygame.draw.circle(win, (0, 0, 0), circleMiddle, radius)
-            pygame.draw.circle(win, (0, 0, 0), circleMiddle2, radius)
+            circlemiddle = (column*cs+center-radius, row*cs+8)
+            circlemiddle2 = (column*cs+cs-radius*2, row*cs+8)
+            pygame.draw.circle(win, (0, 0, 0), circlemiddle, radius)
+            pygame.draw.circle(win, (0, 0, 0), circlemiddle2, radius)
 
 
 class Snake:
-    body = [] # TODO dessa borde vara intsansvariabler
-    turns = {}
-
     def __init__(self, color, position, size, rows):
+        self.body = []
+        self.turns = {}
         self.color = color
         self.rows = rows
         self.snake_size = size
         self.head = Cube(position, self.snake_size, self.rows)
         self.body.append(self.head)
 
-
-        self.dirnx = 0  # Initial X movement
-        self.dirny = 1  # Initial Y movement # TODO Dessa behövs nog inte
-
     def move(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                # pygame.quit()
-                exit()
 
-            keys = pygame.key.get_pressed()
+        keys = pygame.key.get_pressed()
 
-            #for key in keys: # TODO denna ser inte heller ut att behövas
-            if keys[pygame.K_LEFT]:
-                self.dirnx = -1
-                self.dirny = 0
-                self.turns[self.head.position[:]] = [self.dirnx, self.dirny] # TODO Tror inte att man måste göra kopior på kordinaterna här då de bara är en nyckel
-            elif keys[pygame.K_RIGHT]:
-                self.dirnx = 1
-                self.dirny = 0
-                self.turns[self.head.position[:]] = [self.dirnx, self.dirny]
-            elif keys[pygame.K_UP]:
-                self.dirnx = 0
-                self.dirny = - 1
-                self.turns[self.head.position[:]] = [self.dirnx, self.dirny] # TODO dettta borde kunna generaliseras
-            elif keys[pygame.K_DOWN]:
-                self.dirnx = 0
-                self.dirny = 1
-                self.turns[self.head.position[:]] = [self.dirnx, self.dirny]
+        if keys[pygame.K_LEFT]:
+            dirnx = -1
+            dirny = 0
+            self.turns[self.head.position] = (dirnx, dirny)
+        elif keys[pygame.K_RIGHT]:
+            dirnx = 1
+            dirny = 0
+            self.turns[self.head.position] = (dirnx, dirny)
+        elif keys[pygame.K_UP]:
+            dirnx = 0
+            dirny = - 1
+            self.turns[self.head.position] = (dirnx, dirny)
+        elif keys[pygame.K_DOWN]:
+            dirnx = 0
+            dirny = 1
+            self.turns[self.head.position] = (dirnx, dirny)
 
         for i, c in enumerate(self.body):
-            p = c.position[:]
+            p = c.position
             if p in self.turns:
                 turn = self.turns[p]
                 c.move(turn[0], turn[1])
@@ -116,14 +105,6 @@ class Snake:
             else:
                 c.draw(win)
 
-    def reset_snake(self, position):
-        self.head = Cube(position, self.snake_size, self.rows) # TODO detta borde kunna lösas med att man bara förstör objectet
-        self.body = []
-        self.body.append(self.head)
-        self.turns = {}
-        self.dirnx = 0
-        self.dirny = 1
-
 
 def draw_grid(win, step_size, width):
 
@@ -136,17 +117,16 @@ def draw_grid(win, step_size, width):
         pygame.draw.line(win, (255, 255, 255), (0, y), (width, y))  # Horizontal line
 
 
-def randomCube(rows, item):
+def randomcube(rows, item):
     positions = item.body
 
     while True:
         x = random.randrange(rows)
         y = random.randrange(rows)
-        if len(list(filter(lambda z: z.position == (x, y), positions))) > 0: # TODO Denna ska ändras, kollar så att ett snack inte spawnar på ormen.
+        if len(list(filter(lambda z: z.position == (x, y), positions))) > 0:
             continue
         else:
-            break  # TODO förbättra denna
-    return x, y
+            return x, y
 
 
 def refresh_board(win, width, snake, step_size, snack):
@@ -172,7 +152,7 @@ def game_loop():
     pygame.init()
     win = pygame.display.set_mode(size=(height, width))
     snake = Snake((255, 0, 0), (10, 10), step_size, rows)  # Create the snakehead on its starting position
-    snack = Cube(randomCube(rows, snake), step_size, rows, color=(0, 255, 0))
+    snack = Cube(randomcube(rows, snake), step_size, rows, color=(0, 255, 0))
     x = True
 
     clock = pygame.time.Clock()
@@ -183,29 +163,28 @@ def game_loop():
         snake.move()
         if snake.body[0].position == snack.position:
             snake.addcube()
-            snack = Cube(randomCube(rows, snake), step_size, rows, color=(0, 255, 0))
+            snack = Cube(randomcube(rows, snake), step_size, rows, color=(0, 255, 0))
 
         for i in range(len(snake.body)):
             if snake.body[i].position in list(map(lambda s: s.position, snake.body[i+1:])):
                 print("Score: ", len(snake.body))
                 message_box("You lost", "Play again")
-                snake.reset_snake((10, 10))
+                snake = Snake((255, 0, 0), (10, 10), step_size, rows)
                 break
 
         refresh_board(win, height, snake, step_size, snack)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                # pygame.quit()
                 exit()
 
 
 if __name__ == "__main__":
     game_loop()
 
-    #elif event.type == pygame.KEYDOWN:
-    #if event.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d]:
+    # elif event.type == pygame.KEYDOWN:
+    # if event.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d]:
     #    print(event.key)
-    #key = pygame.key.get_pressed()
-    #if key[pygame.K_a]:
+    # key = pygame.key.get_pressed()
+    # if key[pygame.K_a]:
     #   x = False
